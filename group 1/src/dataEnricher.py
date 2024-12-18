@@ -1,10 +1,12 @@
 from dataPreparer import generateTestTrain
-
+import re
+import time
 IN_FILE= "Data/source/FullPOS.ZU.cleanedData_Z.txt"
 SENTENCE_FILE = "Data/clean_data/raw_sentences_labelled.txt"
 WORD_FILE = "Data/clean_data/raw_words_labelled.txt"
 FULL_SENTENCE_FILE = "Data/clean_data/raw_full_sentences_labelled.txt"
 
+#* Examples for testing ----------------------------------------
 # Verb SC extractor
 examples = ["unikeza;3", "ubukele;1","badlulise;2a","babike;2","bekhethwe;2","ikhethe;4",
             "lithuthukisiwe;5", "lokwenza;5", "asebenzisa;6","sihambisane;7","ziye;8",
@@ -45,8 +47,7 @@ ezinsukwini	REL"""
 
 # Below follows format: [0: SC+C, 1:SC+a/e, 2:SC+o, 3: -SC,4:continuous form,5:other]
 # where C is a-z NOT IN {a,e,i,o,u}
-import re
-import time
+
 sc_prefixes = {
     "1": ["u","w","w","ka","e","a"],
     "1a": ["u","w","w","ka","e","a"],
@@ -66,6 +67,8 @@ sc_prefixes = {
     "17": ["ku","kw", "k", False,False,False]
 }
 
+#* Data enirchment (additional labelling, and data level restructuring) functions
+#*--------------------------------------------------------------------------------------
 # Returns string OR False
 def labelVerbSC(verb:str, classes:list):
     # For +SC only, include neg prefix "se"
@@ -86,18 +89,15 @@ def labelVerbSC(verb:str, classes:list):
             prefix_set = sc_prefixes[str(nc)]
             match(int(i)):
                 case(0): # Pos SC check for 4-6 affix in case 4-6 uses 1-3
-                    #pattern = r"\b(se)?(aw|awu|mawu|ma)?(ka|ma|a)?(a|be|nga|ng)?"+prefix_set[i]+"(?![a|e|i|o|u])"
                     pattern = r"\b(se)?(aw|awu|mawu|ma)?(ka|a|kha|kh|ma|m)?"+prefix_set[i]+"(?![a|e|i|o|u])"
 
                     if re.match(pattern, verb):
                         return nc
                 case(1): # Pos SC + check for 4-6 affix in case 4-6 uses 1-3
                     pattern = r"\b(se)?(aw|awu|mawu|ma|ka|kha|ma|a|be|b)?"+prefix_set[i]+"(?=a|e)"
-                    # pattern = r"\b(se)?(aw|awu|mawu|ma|ka|kha|ma|a)?(a|be|ng|nga|b)?"+prefix_set[i]+"(?=a|e)"
                     if re.match(pattern, verb):
                         return nc
                 case(2): # Pos SC + check for 4-6 affix in case 4-6 uses 1-3
-                    # pattern = r"\b(se)?(aw|awu|mawu|ma)?(ka|kha|ma|a)?(a|be|nga|ng|b)?"+prefix_set[i]+"(?=o)"
                     pattern = r"\b(se)?(aw|awu|mawu|ma|ka|kha|ma|a|be|b)?"+prefix_set[i]+"(?=o)"
                     if re.match(pattern, verb):
                         return nc
@@ -185,6 +185,7 @@ def getLabelledNouns(sentence):
                 noun = ("__label__NC"+str(int(nc)) + " "+(n)).strip()
                 nouns.append(noun)
     return nouns
+
 def getGoodVerbsWithLabel(verbs, classes):
     goodVerbs = []
     if verbs:
@@ -198,7 +199,6 @@ def getGoodVerbsWithLabel(verbs, classes):
     return goodVerbs
 
 def notNoisy(line):
-    # ! DEFINE BAD LINES TO IGNORE
     # seperate word and POS
     parts = (line.strip()).split('\t')
     # Remove lines without a POS
@@ -209,7 +209,8 @@ def notNoisy(line):
     # Remove items with non-applicable NC's
     elif "00" in parts[1]:
         return False
-    #! DEFINE LINES WE WANT
+    
+    #* DEFINE LINES WE WANT
     # exclude POSS for now because seems wonkier
     elif parts[1] == "V":
         return True
@@ -221,7 +222,7 @@ def notNoisy(line):
         return False
     elif "IDEO" in parts[1]:
         return False
-    #! Remainders are items we don't want
+    #* Remainders are items we don't want
     # Previously False:
     return False
   
@@ -287,8 +288,6 @@ def makeWordTokens(sentence:list):
         if labelled_verbs:
             labels.extend(labelled_verbs)
         labels.extend(getLabelledNouns(sentence))
-        # for word in labels:
-        #     print("Token...", word)
         return labels
     return False     
 
@@ -319,23 +318,6 @@ def getLabelledTokens(tokenLevel, out,inFile = IN_FILE):
                 if notNoisy(line):
                     sentence.append(line.strip())
 
-def makeBalancedDataset():
-    annotated_dataset = "Data/clean_data/nc_sc_data.txt"
-    
-# def getItemsFromRawData():
-#     sc_dict = {"SC"+nc:0 for nc in ["1","1a","2","2a","3","4","5","6","7","8","9","10","11","14","15","16", "17"]}
-#     nc_dict = {"NC"+nc:0 for nc in ["1","1a","2","2a","3","4","5","6","7","8","9","10","11","14","15","16", "17"]}
-#     adj_dict = {"ADJ"+nc:0 for nc in ["1","1a","2","2a","3","4","5","6","7","8","9","10","11","14","15","16", "17"]}
-#     count_dict = {
-#         "NC": nc_dict,
-#         "SC":sc_dict,
-#         "ADJ":adj_dict 
-#     }
-#     with open("Data/clean_data/raw_words_labelled.txt", 'r', encoding='utf-8') as file:
-#         if 
-#     print(count_dict)
-
-#getItemsFromRawData()
 def main():
     choice = input("(1) Sentence, (2) word tokens, (3) both (4) full setences\n")
     match(choice):
@@ -362,11 +344,3 @@ def main():
             generateTestTrain(0.80, FULL_SENTENCE_FILE, name="raw_full_sentence")
             print("Done with full sentences")
             print("Done")
-# if __name__=="__main__":
-#     main()
-
-# print("test with correct nc sc")
-# getLabelledTokens("word", "Data/clean_data/test_raw_words.txt")
-# generateTestTrain(0.80,"Data/clean_data/test_raw_words.txt", name="test_raw_words")
-# print("Done with full sentences")
-# print("Done")

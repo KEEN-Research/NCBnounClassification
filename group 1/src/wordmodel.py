@@ -2,16 +2,16 @@ from gensim.models import FastText
 import time
 import fasttext
 import matplotlib.pyplot as plt
+import sys
 
 FASTTEXT_MODEL = "Data/models/2024-04-26--fasttext-zu_monolingual-300-3.model"
 RAW_DATA = "Data/source/cleanedData_Z.txt"
 
-#! adjust minn / maxnn
+
 def trainModel(filepath=RAW_DATA, minN=3, maxN=6, dimensions=150):
     print(f"Training new model: minN={minN}, maxN={maxN}, dimensions={dimensions}")
     model = fasttext.train_unsupervised(filepath, model="skipgram", minn=minN, maxn=maxN, dim=dimensions, epoch=15, ws=3)
     model.save_model(f"Data/models/zu_mine-{minN}_{maxN}_{dimensions}.bin")
-    #model.save_model(f"Data/models/dumb.bin")
 
     print(f"Done! Getting nearest neighbours.")
     nn = model.get_nearest_neighbors("umfundisi",k=10)
@@ -21,9 +21,6 @@ def trainModel(filepath=RAW_DATA, minN=3, maxN=6, dimensions=150):
         nn_p.append(round(float(n[0]),3))
     print()
     return model
-
-
-
 
 def experiment():
     dim = [150, 200,250,300]
@@ -65,7 +62,12 @@ def experiment():
     
 
 def loadModel(filePath=FASTTEXT_MODEL,type="gensim"):
-    print("Loading model...")
+    if type=="gensim":
+        print("Loading large base model...")
+    elif type == "facebook":
+        print("Loading smaller model variant...")
+    else:
+        sys.exit("Word model type not recognised")
     load_t0  = time.time()
     if type == "gensim":
         vocab = FastText.load(FASTTEXT_MODEL)

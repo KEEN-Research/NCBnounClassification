@@ -7,37 +7,38 @@ from collections import defaultdict
 dataFile = ["dataA.txt", "dataB_1.txt","dataB_2.txt", "dataD.txt"]
 DIRTY_FILE = "Data/dirty_data/zul_community_2017-sentences.txt"
 CLEANED_RAWDATA = "Data/clean_data/rawCleaned.txt"
-#dataFile = ["dataD.txt"]
 CANON_DATA = "Data/canonNouns/newCleanNouns.csv"
 TRAINING_DATA = "Data/training/data.train"
 TESTING_DATA = "Data/training/data.valid"
 CLEAN_DATA = "Data/clean_data/cleanData.txt"
 
-
+#* NB: When reformatting a labelled corpus, indicate which labels to keep/poss
+#* by un/commenting labels here.
+# Note: Data C is no longer was removed due to high overlap with another dataset.
 tag_mappingABC = {
     "NPre": "NC",
     "BPre": "NC",
     "NPrePre": "NC",
     # "OC": "OC",
-    "SC": "SC",
+    # "SC": "SC",
     # "PossConc": "possC",
     # "Dem": "demC",
     # "AdjPref": "adjPre",
-    "VRoot": "verb",
-    "VTerm": "verb",
+    # "VRoot": "verb",
+    # "VTerm": "verb",
 }
 
 tag_mappingD = {
     "n": "NC",
     "iv_n": "NC",
     # "o": "OC",
-    "s": "SC",
-    "i": "SC",
-    "p": "SC",
-    # "z": "possC",
-    # "d": "demC",
-    "vr": "verb",
-    "vt": "verb"
+    # "s": "SC",
+    # "i": "SC",
+    # "p": "SC",
+    # # "z": "possC",
+    # # "d": "demC",
+    # "vr": "verb",
+    # "vt": "verb"
 }
 
 def correctLabelsAB(labels:str, removeVerbs=True):
@@ -269,7 +270,6 @@ def prepareSentenceData_AB(input_file, output_file):
             result = " ".join(sentence).lower() + "\n"
             outfile.write(" ".join(list(labels)) +" "+result)
 
-#! Remove setting idea! Not logically sound bc of Data A-C formatting!
 def prepareData(inFile, setting="default", outFile=CLEAN_DATA, labels=True):
     """Accepts: file to clean/format 
     Writes all lines with nouns or concord agreements words with tags to cleanedData.txt
@@ -402,7 +402,7 @@ def removeDuplicatesAndCompounds(infile):
             file.write(word + '\n')
     print(f"Processed file saved as {infile}")
 
-# RELATED TO DIRTY DATA--------------------------------------------------
+# CORRECTLY FORMAT CRAWLED DATA ----------------------------------------------------
 def preprocessDirtyData(text, language='z'):
     
     # Split the text into sentences based on ., ?, !, ..., or ;
@@ -445,7 +445,7 @@ def cleanDirtyData(rawData=DIRTY_FILE):
     #     outFile.write(cleaned_data)
     print(f"Data written tO {CLEANED_RAWDATA}")
 
-# DATA REPORTING----------------------------------------------------------------
+# DATA REPORTING--- ----------------------------------------------------------------
 def getDataReport(filename=TRAINING_DATA):
     pos_counts = defaultdict(int)
     class_counts = defaultdict(int)
@@ -479,7 +479,9 @@ def getDataReport(filename=TRAINING_DATA):
 def testPlayground():
    getDataReport(TESTING_DATA)
    getDataReport(TRAINING_DATA)
-    
+
+fastTextifyCanonNouns(file="Data/canonNouns/alexNouns.csv",
+                      out="Data/testing/alexNouns.txt")
 def main():
     opt = input("""What'll it be tonight folks?\n 
                 (3) Split prepared data into test/train\n
@@ -495,10 +497,12 @@ def main():
         case 4:
             fastTextifyCanonNouns()
         case 5:
-            resetDataFile(data = "Data/clean_data/new_nc_sc_data.txt")
+            classifierVerPath = "Data/clean_data/gold_nn_w_data.txt"
+            classifierVerName = "gold_nn_w"
+            resetDataFile(data = classifierVerName)
             for f in dataFile:
-                prepareData("Data/source/"+f, outFile="Data/clean_data/new_nc_sc_data.txt")
-            generateTestTrain(0.8,input_file="Data/clean_data/new_nc_sc_data.txt", name="new_sc_nc")
+                prepareData("Data/source/"+f, outFile=classifierVerPath)
+            generateTestTrain(0.8,input_file=classifierVerPath, name=classifierVerName)
         case 6:
             cleanDirtyData()
         case 7:
@@ -513,11 +517,3 @@ def main():
         case _:
             print("Command not recognised.")
 
-# if __name__=="__main__":
-#     resetDataFile("Data/clean_data/annotated_unlabelled.txt")
-#     for f in dataFile:
-#         prepareData("Data/source/"+f, outFile="Data/clean_data/annotated_unlabelled.txt", labels=False)
-    # generateTestTrain(0.8, input_file="Data/clean_data/nc_sc_data.txt", name="nc_sc_data")
-    #testPlayground()
-    # print(formatAB_morphemeLevel("izinhlobo	i[NPrePre1a]-zin[BPre15]-hlobo[SC2b]	hlobo	N10"))
-    # print(formatD_morphemeLevel("a<hort>ku<s15>b<vr>e<vs>"))
